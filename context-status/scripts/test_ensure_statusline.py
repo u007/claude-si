@@ -57,7 +57,7 @@ class EnsureStatusline(unittest.TestCase):
         self.assertEqual(result.stdout, "")
 
     def test_repoints_stale_managed_path(self):
-        old = "/x/cache/personal-plugins/context-status/1.0.0/bin/context-statusline.sh"
+        old = "/x/cache/claude-si/context-status/1.0.0/bin/context-statusline.sh"
         self.settings.write_text(
             json.dumps({"statusLine": {"type": "command", "command": old}})
         )

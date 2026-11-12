@@ -13,7 +13,7 @@ The skill is instructions, not automation. Nothing writes docs or regenerates th
 
 ```sh
 claude plugin marketplace add u007/claude-plugins
-claude plugin install okf@personal-plugins
+claude plugin install okf@claude-si
 ```
 
 Then remove any standalone copy at `~/.claude/skills/okf` so the skill is not listed twice.

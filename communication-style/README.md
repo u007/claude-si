@@ -5,13 +5,13 @@ SessionStart hook that injects the Agent Communication & Style Standard (ASD-STE
 The text lives in `standard.md`. Edit it there; the hook is `cat standard.md`, so a missing file makes it exit non-zero. Works unchanged in ocode, which runs the same SessionStart hook with empty stdin.
 
 ```
-/plugin install communication-style@personal-plugins
+/plugin install communication-style@claude-si
 ```
 
 Test: `python3 tests/test_rule_plugins.py`
 
 Precedence: the standard itself says explicit user instructions and project docs override it. Your `~/.claude/CLAUDE.md` rules (caveman mode, Flow Context, ULTRATHINK) therefore win on conflict.
 
-To prefer this standard over caveman, remove the "Communication: Caveman Mode" section from `~/.claude/CLAUDE.md`. To turn this plugin off, run `/plugin disable communication-style@personal-plugins`.
+To prefer this standard over caveman, remove the "Communication: Caveman Mode" section from `~/.claude/CLAUDE.md`. To turn this plugin off, run `/plugin disable communication-style@claude-si`.
 
 Injected on `startup`, `clear` and `compact`. Skipped on `resume`, where the earlier context is restored.

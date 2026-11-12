@@ -1,5 +1,5 @@
 {
-  "name": "personal-plugins",
+  "name": "claude-si",
   "owner": { "name": "james" },
   "description": "Personal Claude Code plugins: context status line, inbound-content guardrail, OKF knowledge bundle workflow, communication style, working principles, code quality, git safety, frontend standards.",
   "plugins": [

@@ -14,7 +14,7 @@ The message appears at session start and again whenever it changes (for example 
 ## Install
 
 ```
-/plugin install branch-indicator@personal-plugins
+/plugin install branch-indicator@claude-si
 ```
 
 Requires `python3` on `PATH`. No setup beyond that.

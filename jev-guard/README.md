@@ -33,7 +33,7 @@ Claude Code plugin. PostToolUse hook port of ocode's inbound-content guardrail (
 From the marketplace (see the repo-level README for the marketplace steps):
 
 ```
-/plugin install jev-guard@personal-plugins
+/plugin install jev-guard@claude-si
 ```
 
 To test without installing, from a clone of the repo:

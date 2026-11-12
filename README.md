@@ -1,6 +1,6 @@
-# personal-plugins
+# claude-si
 
-Personal Claude Code plugin marketplace (`personal-plugins`).
+Personal Claude Code plugin marketplace (`claude-si`).
 
 | Plugin | Path | What it does |
 | --- | --- | --- |
@@ -17,6 +17,8 @@ Personal Claude Code plugin marketplace (`personal-plugins`).
 ## Installation
 
 ### 1. Add the marketplace
+
+The marketplace is named `claude-si`. The GitHub repository is still named `claude-plugins`, so the URLs below use that name.
 
 From GitHub, in a terminal:
 
@@ -41,17 +43,17 @@ claude plugin marketplace list
 Or from a local clone:
 
 ```sh
-git clone https://github.com/u007/claude-plugins ~/www/personal-plugins
+git clone https://github.com/u007/claude-plugins ~/www/claude-si
 ```
 
 ```
-/plugin marketplace add ~/www/personal-plugins
+/plugin marketplace add ~/www/claude-si
 ```
 
 ### 2. Install jev-guard
 
 ```
-/plugin install jev-guard@personal-plugins
+/plugin install jev-guard@claude-si
 ```
 
 Then finish the setup in [jev-guard/README.md](jev-guard/README.md#setup): export `TYPESAFE_API_KEY` in your shell profile and start Claude Code from a terminal that loads it.
@@ -59,7 +61,7 @@ Then finish the setup in [jev-guard/README.md](jev-guard/README.md#setup): expor
 ### 3. Install okf
 
 ```
-/plugin install okf@personal-plugins
+/plugin install okf@claude-si
 ```
 
 See [okf/README.md](okf/README.md).
@@ -67,21 +69,12 @@ See [okf/README.md](okf/README.md).
 ### 4. Install context-status
 
 ```
-/plugin install context-status@personal-plugins
+/plugin install context-status@claude-si
 ```
 
-Installing the plugin does not switch the status line on. Point `statusLine` in `~/.claude/settings.json` at the script in your clone:
+Installing the plugin switches the status line on. A SessionStart hook writes `statusLine` into `~/.claude/settings.json` when it is unset, and repoints a stale context-status path after a plugin update. It leaves any other `statusLine` untouched. Restart Claude Code after the first install.
 
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/absolute/path/to/personal-plugins/context-status/bin/context-statusline.sh"
-  }
-}
-```
-
-Use the clone path, not the plugin cache path, so the command survives plugin updates.
+To use a different status line, set `statusLine` yourself. The hook will not overwrite a command that does not point at context-status.
 
 `context-status/bin/prev_command.txt` chains a previous status line. The shipped value points at a cognee statusline that most machines do not have. Blank the file, or replace it with your own command, unless you use that one. A broken chained command only drops its own segment.
 
@@ -90,7 +83,7 @@ Not yet verified end to end on a clean machine.
 ### 5. Install branch-indicator
 
 ```
-/plugin install branch-indicator@personal-plugins
+/plugin install branch-indicator@claude-si
 ```
 
 See [branch-indicator/README.md](branch-indicator/README.md).
@@ -104,8 +97,8 @@ Each plugin is independent. Install only the ones you want.
 Add the marketplace (step 1 above), then install one plugin by name:
 
 ```sh
-claude plugin install jev-guard@personal-plugins
-# or: okf@personal-plugins, context-status@personal-plugins, branch-indicator@personal-plugins
+claude plugin install jev-guard@claude-si
+# or: okf@claude-si, context-status@claude-si, branch-indicator@claude-si
 ```
 
 ### Manually from a local clone
@@ -113,11 +106,11 @@ claude plugin install jev-guard@personal-plugins
 No marketplace needed. Clone the repo, then load one plugin directory for a session:
 
 ```sh
-git clone https://github.com/u007/claude-plugins ~/www/personal-plugins
-claude --plugin-dir ~/www/personal-plugins/jev-guard
+git clone https://github.com/u007/claude-plugins ~/www/claude-si
+claude --plugin-dir ~/www/claude-si/jev-guard
 ```
 
-`--plugin-dir` applies to that run only. To make it permanent, use the marketplace route with the local clone path (`/plugin marketplace add ~/www/personal-plugins`, then `/plugin install <name>@personal-plugins`).
+`--plugin-dir` applies to that run only. To make it permanent, use the marketplace route with the local clone path (`/plugin marketplace add ~/www/claude-si`, then `/plugin install <name>@claude-si`).
 
 Plugin-specific setup still applies: `TYPESAFE_API_KEY` for jev-guard, the `statusLine` entry for context-status.
 
@@ -129,7 +122,7 @@ Quick install:
 
 1. Open the **Code** tab and start a local session.
 2. Add the marketplace by typing `/plugin marketplace add u007/claude-plugins` in the prompt.
-3. Install the plugins you want, for example `/plugin install okf@personal-plugins`. Or open the plugin browser and pick them from `personal-plugins`.
+3. Install the plugins you want, for example `/plugin install okf@claude-si`. Or open the plugin browser and pick them from `claude-si`.
 4. Start a new session so the plugins load.
 
 Prefer a terminal? Run steps 1 and 2 of [Installation](#installation) there. The desktop app's local sessions read the same settings files as the terminal, so the plugins show up in the Code tab with nothing more to do.
@@ -138,23 +131,27 @@ Manage, disable or uninstall later from **+ > Plugins > Manage plugins**.
 
 `context-status` needs the extra `statusLine` entry from [Installation](#4-install-context-status) in `~/.claude/settings.json`. Whether the desktop Code tab renders a custom status line is not verified.
 
+## Upgrading from `personal-plugins`
+
+The marketplace was renamed from `personal-plugins` to `claude-si`. Installs recorded as `<plugin>@personal-plugins` no longer resolve. Add the marketplace again and reinstall each plugin as `<plugin>@claude-si`. Then remove the stale `@personal-plugins` entries from `enabledPlugins` and `extraKnownMarketplaces` in `~/.claude/settings.json`.
+
 ## Updating
 
 Refresh the marketplace, then update the plugin:
 
 ```sh
-claude plugin marketplace update personal-plugins
-claude plugin update jev-guard@personal-plugins
+claude plugin marketplace update claude-si
+claude plugin update jev-guard@claude-si
 ```
 
-Inside a session: `/plugin marketplace update personal-plugins`, then `/plugin update jev-guard@personal-plugins`. Restart Claude Code afterwards so the new version loads.
+Inside a session: `/plugin marketplace update claude-si`, then `/plugin update jev-guard@claude-si`. Restart Claude Code afterwards so the new version loads.
 
 Updates are picked up only when the plugin `version` changes, so bump `version` in both the plugin's `plugin.json` and its `marketplace.json` entry when releasing.
 
 If you installed from a local clone, pull first:
 
 ```sh
-git -C ~/www/personal-plugins pull
+git -C ~/www/claude-si pull
 ```
 
 `context-status` runs from the clone path in `~/.claude/settings.json`, so `git pull` alone updates it. No plugin update is needed for the status line script.

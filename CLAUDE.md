@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Claude Code plugin marketplace (`personal-plugins`) holding nine plugins (`context-status`, `jev-guard`, `okf`, `branch-indicator`, `communication-style`, `working-principles`, `code-quality`, `git-safety`, `frontend-standards`). The marketplace manifest is `.claude-plugin/marketplace.json`; each plugin has its own `.claude-plugin/plugin.json`. Plugin `source` paths in the marketplace are relative (`./context-status`, `./jev-guard`).
+A Claude Code plugin marketplace (`claude-si`) holding nine plugins (`context-status`, `jev-guard`, `okf`, `branch-indicator`, `communication-style`, `working-principles`, `code-quality`, `git-safety`, `frontend-standards`). The marketplace manifest is `.claude-plugin/marketplace.json`; each plugin has its own `.claude-plugin/plugin.json`. Plugin `source` paths in the marketplace are relative (`./context-status`, `./jev-guard`).
 
 ## Commands
 
@@ -71,6 +71,6 @@ Delete any `__pycache__` the test run leaves behind. It is gitignored, but do no
 ## Conventions specific to this repo
 
 - The `plugin.json` and the marketplace entry must agree on name and version. `claude plugin tag` checks this.
-- Plugin folder names are part of the install identity (`jev-guard@personal-plugins`). Do not rename them.
-- Keep the marketplace name `personal-plugins`. It is referenced from user settings.
+- Plugin folder names are part of the install identity (`jev-guard@claude-si`). Do not rename them.
+- Keep the marketplace name `claude-si` (renamed from `personal-plugins`). It is referenced from user settings. Installs recorded as `@personal-plugins` do not migrate on their own, so the root README keeps an upgrade note. Do not rename the marketplace again without updating it.
 - Do not commit personal paths or usernames. Use `$HOME` or `~` in shipped config and fixtures.
