@@ -1,7 +1,7 @@
 {
   "name": "claude-si",
   "owner": { "name": "james" },
-  "description": "Personal Claude Code plugins: context status line, inbound-content guardrail, OKF knowledge bundle workflow, communication style, working principles, code quality, git safety, frontend standards.",
+  "description": "Personal Claude Code plugins: context status line, inbound-content guardrail, OKF knowledge bundle workflow, communication style, working principles, code quality, git safety, frontend standards, lean changes, change review.",
   "plugins": [
     {
       "name": "context-status",
@@ -56,6 +56,18 @@
       "source": "./frontend-standards",
       "version": "0.1.0",
       "description": "Injects frontend standards at session start: use the present UI library, semantic HTML, micro-interaction care."
+    },
+    {
+      "name": "lean-changes",
+      "source": "./lean-changes",
+      "version": "0.1.0",
+      "description": "Injects lean-change rules at session start: smallest complete change, reuse the codebase and its existing libraries before the standard library, no unrequested abstractions."
+    },
+    {
+      "name": "review-changes",
+      "source": "./review-changes",
+      "version": "0.1.0",
+      "description": "Deep review of the active change set via the code-reviewer subagent, then issue-by-issue resolution with the user. Covers correctness, contracts, security, production gotchas, tests, DRY and lean code."
     }
   ]
 }

@@ -13,6 +13,8 @@ Personal Claude Code plugin marketplace (`claude-si`).
 | `code-quality` | `code-quality/` | SessionStart: no fallbacks, error logging, no upsert, TODO tracking, test safety. |
 | `git-safety` | `git-safety/` | SessionStart: no bare `git reset --soft` in shared repos. |
 | `frontend-standards` | `frontend-standards/` | SessionStart: use the present UI library, semantic HTML, UX care. |
+| `lean-changes` | `lean-changes/` | SessionStart: smallest complete change, reuse existing helpers and libraries first, no unrequested abstractions. |
+| `review-changes` | `review-changes/` | `/review-changes` command: deep review through the `code-reviewer` subagent, then issue-by-issue resolution. |
 
 ## Installation
 

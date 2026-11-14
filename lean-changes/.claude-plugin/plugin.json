@@ -1,0 +1,6 @@
+{
+  "name": "lean-changes",
+  "version": "0.1.0",
+  "author": { "name": "james" },
+  "description": "Injects lean-change rules at session start: smallest complete change, reuse the codebase and its existing libraries before the standard library, no unrequested abstractions."
+}

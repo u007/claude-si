@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent.parent
-PLUGINS = ["communication-style", "working-principles", "code-quality", "git-safety", "frontend-standards"]
+PLUGINS = ["communication-style", "working-principles", "code-quality", "git-safety", "frontend-standards", "lean-changes"]
 
 
 RULES_FILE = {"communication-style": "standard.md"}
@@ -48,6 +48,7 @@ class RulePlugins(unittest.TestCase):
             "code-quality": "onConflictDoUpdate",
             "git-safety": "git reset --soft",
             "frontend-standards": "Library discipline",
+            "lean-changes": "Consistency beats a second way",
         }
         for name, needle in expect.items():
             self.assertIn(needle, (ROOT / name / RULES_FILE.get(name, "rules.md")).read_text())
