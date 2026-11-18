@@ -35,10 +35,10 @@ Update the bundle only for durable knowledge produced by this task: a decision a
 ## 3. Writing a doc
 (Done by `okf:context-writer`; see "Delegate to the okf agents".)
 1. **Deduplicate first.** Re-run the search for the doc's topic. If a doc already covers it, update that doc instead of creating a near-duplicate. If two existing docs overlap, merge the content into the better one and deprecate the other with a reason pointing at the survivor.
-2. Verify every claim against the code or system before writing it down.
+2. Verify every claim against the code or system before writing it down. **Prune while editing:** delete or rewrite every part of an existing doc the change makes false. A live doc keeps no stale section. Deprecate the whole doc only when nothing in it still holds.
 3. Write the doc (format below) at a bundle-relative path, one topic per doc. The path must stay inside `docs/` (no `..`, not absolute) and must not be `index.md` or `log.md`.
 4. Set `timestamp` to now (RFC 3339) on create and on every content change.
-5. Take the lock (see Concurrency), then do steps 3 to 5 inside it: write the doc, append to the log, regenerate the index.
+5. Take the lock (see Concurrency), then write the doc, append to the log and regenerate the index inside it.
 
 ### Doc format
 ```yaml
@@ -85,7 +85,7 @@ Other writers may touch the bundle. Do every mutation (write doc, deprecate, del
 
 ## Init and audit
 - **Init** (only when asked, and only when no marker exists): refuse if `docs/index.md` exists without the marker. Otherwise create `index.md` containing the marker and an empty log, then annotate existing docs with frontmatter without changing their bodies. If the marker already exists, run an audit instead of failing.
-- **Audit:** count conforming, non-conforming and deprecated docs. Report stale docs (contradict current code), duplicates, orphans (not reachable from the index or never referenced), and broken anchors.
+- **Audit:** count conforming, non-conforming and deprecated docs. Stale docs (contradict current code) get fixed, not just reported: delegate the correction to `okf:context-writer`, which corrects or prunes the false parts and deprecates the doc when nothing in it still holds. Merge duplicates into the better doc and deprecate the other. Report orphans (not reachable from the index or never referenced) and broken anchors.
 
 ## Gotchas
 - **Line-anchor drift:** citations like `file.go:123` silently rot when lines are added above them. After editing a cited file, re-derive EVERY anchor on the page, checking both ends of ranges: extract each `\w+\.\w+:\d+`, print the real source line, compare. Prefer citing a symbol name to a line number. Do not trust an automated "anchors corrected" report.
