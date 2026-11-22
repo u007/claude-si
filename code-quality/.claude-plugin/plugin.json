@@ -1,6 +1,6 @@
 {
   "name": "code-quality",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": { "name": "james" },
-  "description": "Injects code quality rules at session start: no fallbacks, error logging, no upsert, TODO tracking, test safety."
+  "description": "Injects code quality rules at session start: no fallbacks, error logging, no upsert, TODO tracking, test safety. Adds /code-quality:finish-check skill: a read-only scan for placeholders, exposed secrets and leftover processes."
 }

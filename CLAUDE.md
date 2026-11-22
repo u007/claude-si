@@ -25,6 +25,9 @@ claude plugin validate .
 # rule-pack plugins (communication-style, working-principles, code-quality, git-safety, frontend-standards, lean-changes)
 python3 tests/test_rule_plugins.py
 
+# finish-check script (read-only, no network)
+python3 tests/test_finish_check.py
+
 # jev-guard tests (judge is stubbed, no network)
 python3 jev-guard/scripts/test_content_guard.py
 python3 -m py_compile jev-guard/scripts/content_guard.py
@@ -63,11 +66,18 @@ Delete any `__pycache__` the test run leaves behind. It is gitignored, but do no
 
 ### Rule-pack plugins: communication-style, working-principles, code-quality, git-safety, frontend-standards, lean-changes
 
-- Each holds one markdown file (`rules.md`; `standard.md` for communication-style, ASD-STE100 limits plus software overrides, ported from ocode `internal/agent/prompt.go`) and a SessionStart hook (matcher `startup|clear|compact`, so not `resume`) whose command is `cat "${CLAUDE_PLUGIN_ROOT}/<file>"`. Stdout becomes session context. A missing file makes the hook exit non-zero (Claude Code shows a non-blocking error; ocode ignores it). No script, so nothing is duplicated across plugins.
+- Each holds one markdown file (`rules.md`; `standard.md` for communication-style, ASD-STE100 limits plus software overrides, ported from ocode `internal/agent/prompt.go`) and a SessionStart hook (matcher `startup|clear|compact`, so not `resume`) whose command is `cat "${CLAUDE_PLUGIN_ROOT}/<file>"`. Stdout becomes session context. A missing file makes the hook exit non-zero (Claude Code shows a non-blocking error; ocode ignores it). No hook script, so nothing is duplicated across plugins. `code-quality` also ships a read-only script invoked by its `/code-quality:finish-check` skill, not by the hook.
 - No Python hook script on purpose: ocode runs Claude Code SessionStart hooks with empty stdin and drops hook failures silently (ocode repo, `internal/plugins/sessionstart.go`: `cmd.Stdin = nil`, error returns `""`), so a script that reads the hook payload crashes there unnoticed. Keep these hooks stdin-independent.
 - Split from the user's former global `~/.claude/CLAUDE.md`. Users opt out of a theme by not installing its plugin.
 - Brevity and ASD-STE100 style live in `communication-style`; the other packs carry no style rules.
 - `lean-changes` is adapted from Ponytail (MIT; attribution in its `rules.md` and README). Its delete rule is limited to what the change itself makes unnecessary, so it agrees with the Surgical Changes rule in `working-principles`. Keep the two in step.
+
+### code-quality: finish-check skill
+
+- `skills/finish-check/SKILL.md` runs `scripts/finish-check.sh` on the current directory. It is manual; no hook runs it, so hook failures cannot go unnoticed. Claude Code exposes it as `/code-quality:finish-check`.
+- Use a skill, not a command: ocode expands `${CLAUDE_PLUGIN_ROOT}` in skills (`internal/skill/loader.go`) but not in command markdown (`internal/commands/loader.go`). Current Claude Code expands it in both.
+- The script is POSIX `sh` and read-only. It reports placeholder markers in source/config files (`*.md`/`*.txt` and `TODO.md` are skipped so prose does not trip the patterns), world-readable secret/DB files (templates such as `.env.example` are excluded), and processes plus listening ports owned by the project. Exit 0 means clean and every check ran; 1 means review or could not verify; 2 usage error.
+- Adapted from AICodeKing's Fable-Cheap (MIT; attribution in the script header and `code-quality/README.md`). Keep the `TODO.md` skip in step with the rule that tracked deferrals go in `TODO.md`.
 
 ### review-changes: review command
 

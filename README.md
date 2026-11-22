@@ -10,7 +10,7 @@ Personal Claude Code plugin marketplace (`claude-si`).
 | `branch-indicator` | `branch-indicator/` | Announces the git worktree (or branch) the session works in, at start and on change. |
 | `communication-style` | `communication-style/` | SessionStart: injects the ASD-STE100 communication standard (ported from ocode). |
 | `working-principles` | `working-principles/` | SessionStart: fix suggestion protocol, docs-as-truth, surgical changes, planning rules. |
-| `code-quality` | `code-quality/` | SessionStart: no fallbacks, error logging, no upsert, TODO tracking, test safety. |
+| `code-quality` | `code-quality/` | SessionStart: no fallbacks, error logging, no upsert, TODO tracking, test safety. Adds `/code-quality:finish-check` skill: read-only scan for placeholders, exposed secrets and leftover processes. |
 | `git-safety` | `git-safety/` | SessionStart: no bare `git reset --soft` in shared repos. |
 | `frontend-standards` | `frontend-standards/` | SessionStart: use the present UI library, semantic HTML, UX care. |
 | `lean-changes` | `lean-changes/` | SessionStart: smallest complete change, reuse existing helpers and libraries first, no unrequested abstractions. |
