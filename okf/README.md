@@ -7,7 +7,9 @@ Claude Code plugin for working with an OKF (Open Knowledge Format) v0.1 knowledg
 
 - **Agents `context` and `context-writer`:** Haiku subagents (`okf:context`, `okf:context-writer`) shipped with the plugin. `context` is read-only (no write tools) and returns a lookup digest before a task; `context-writer` updates docs (pruning stale sections), log and index after a task with durable knowledge. The main agent decides what is durable, briefs the writer, and checks `git diff docs/` afterwards. If the agents are unavailable, the skill is followed directly.
 
-The skill is instructions, not automation. Nothing writes docs or regenerates the index for Claude: Claude follows the skill. The hook only makes the lookup reminder reliable.
+- **Script `skills/okf/scripts/okf-update.pl`:** appends the log entry and regenerates `index.md` under the `docs/.okf.lock` flock, in one call (well under a second on a 1,200-file bundle). Its index has the same lines as ocode's `knowledge.GenerateIndex`; only entries with tied titles may order differently. Perl core only.
+
+The skill decides what to write; Claude writes the docs, and the script keeps the log and index in sync. The hook only makes the lookup reminder reliable.
 
 ## Install
 

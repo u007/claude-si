@@ -22,11 +22,11 @@ This plugin ships two Haiku agents. The SessionStart hook tells you to use them 
 - **No dispatch available** (you are a subagent, or the agents are not registered): do the steps directly.
 
 ## 1. BEFORE work: look up
-Do this before reading code or editing anything, for every task. Run it through `okf:context` as described above.
-1. Read `docs/index.md` (the catalogue: `- [title](path) - description`).
-2. Search for the task's topic. List docs whose title, description, tags or path match. Search the bodies too: `grep -ril "<term>" docs --include='*.md'`. Ranking that works: a match in the title weighs 3, description 2, body 1; with several terms, require all of them to appear.
-3. Read every relevant doc in full. Skip `status: deprecated` docs unless checking history, and respect `.okfignore`.
-4. Verify any code claim in a doc against the code before relying on it. Citations rot (see Gotchas).
+Do this before reading code or editing anything, for every task. Run it through `okf:context` as described above. Speed matters: the lookup runs before every task, so search, never browse.
+1. Do not read `docs/index.md` in full; it can be hundreds of KB. Search it: each line is `- [title](path) - description`, so a case-insensitive grep of `docs/index.md` for each topic term, showing matching lines (Grep tool: `output_mode: content`, `-i`), returns the title and description matches directly.
+2. Search doc bodies for the same terms, listing matching files only (`files_with_matches`) (`grep -ril "<term>" docs --include='*.md'`). Rank: a title match weighs 3, description 2, body 1; with several terms, require all of them. Respect `.okfignore` and skip `(deprecated)` entries unless checking history.
+3. Read at most the top 5 docs, in full. Read another only when a doc you read points to it as essential.
+4. Verify only the code claims your answer relies on, with one grep for the cited symbol or file. Do not check every anchor on a page. Citations rot (see Gotchas).
 5. State briefly which docs you used, or that none matched. Then do the work.
 
 ## 2. AFTER work: decide whether to write
@@ -35,17 +35,17 @@ Update the bundle only for durable knowledge produced by this task: a decision a
 ## 3. Writing a doc
 (Done by `okf:context-writer`; see "Delegate to the okf agents".)
 1. **Deduplicate first.** Re-run the search for the doc's topic. If a doc already covers it, update that doc instead of creating a near-duplicate. If two existing docs overlap, merge the content into the better one and deprecate the other with a reason pointing at the survivor.
-2. Verify every claim against the code or system before writing it down. **Prune while editing:** delete or rewrite every part of an existing doc the change makes false. A live doc keeps no stale section. Deprecate the whole doc only when nothing in it still holds.
+2. Verify claims against the code or system before writing them down. Claims the brief marks as verified need no re-check; verify the rest. **Prune while editing:** delete or rewrite every part of an existing doc the change makes false. A live doc keeps no stale section. Deprecate the whole doc only when nothing in it still holds.
 3. Write the doc (format below) at a bundle-relative path, one topic per doc. The path must stay inside `docs/` (no `..`, not absolute) and must not be `index.md` or `log.md`.
 4. Set `timestamp` to now (RFC 3339) on create and on every content change.
-5. Take the lock (see Concurrency), then write the doc, append to the log and regenerate the index inside it.
+5. Write the doc, then run the update script once (step 4). It takes the lock, appends the log entry and regenerates the index.
 
 ### Doc format
 ```yaml
 ---
 type: Concept            # Concept, Gotcha, Playbook, Decision, ...
 title: Short title
-description: One line, specific enough to tell docs apart in a search.
+description: One line, at most 200 characters, specific enough to tell docs apart in a search.
 resource: path/or/url    # what the doc is about
 tags: [area, topic]
 timestamp: 2026-10-30T09:00:00Z
@@ -56,6 +56,14 @@ deprecated_reason: why   # only when deprecated
 `type` is required. A doc without this frontmatter is non-conforming: it stays in the bundle, gets listed under Unclassified, and should be annotated. Keep unknown frontmatter keys when you rewrite a doc.
 
 ## 4. Log and index (keep both in sync after every change)
+Never edit `docs/log.md` or `docs/index.md` by hand. After each doc change, run the bundled script (it sits in this skill's base directory, under `scripts/`):
+```
+perl <skill-base-dir>/scripts/okf-update.pl docs log <Creation|Update|Deprecation|Deletion> <bundle-relative-path> "<one-sentence summary>"
+```
+It takes the lock on `docs/.okf.lock`, adds the log entry under today's heading, regenerates `index.md` from every doc's frontmatter, and writes both atomically. Run one call per changed doc. `perl <skill-base-dir>/scripts/okf-update.pl docs index` only regenerates the index. If the script exits non-zero, report its error; do not fall back to hand edits. Keep the summary to one sentence: the log is history, the doc holds the detail.
+
+The formats the script produces, for reference:
+
 **`docs/log.md`** is append-only history, newest day first:
 ```
 # Directory Update Log
@@ -74,17 +82,17 @@ Action is one of `Creation`, `Update`, `Deprecation`, `Deletion`. Add the entry 
 - Write to a temp file and rename it over `index.md`, so a failed run leaves the old index intact.
 
 ## Deprecate and clean up
-- Deprecate, never delete, as the normal path: set `status: deprecated` and `deprecated_reason`, then log `Deprecation` and regenerate the index.
-- Cleanup deletes deprecated docs. List them with path and reason first and delete only after the user confirms. Then log each `Deletion` and regenerate the index.
+- Deprecate, never delete, as the normal path: set `status: deprecated` and `deprecated_reason`, then run the script with `Deprecation`.
+- Cleanup deletes deprecated docs. List them with path and reason first and delete only after the user confirms. Then run the script with `Deletion` for each.
 
 ## Exclusions
 Skipped as docs: `index.md`, `log.md`, dot-files and dot-directories, non-`.md` files, `PLAN-*.md` and `*.OCODE.md`. `docs/.okfignore` adds patterns, one per line (blank lines and `#` comments skipped). A pattern matches the basename and the bundle-relative path, and a trailing `/` matches directories. Put non-bundle markdown that lives under `docs/` (eval output, generated reports, drafts) in `.okfignore`, or it is counted as bundle docs and pollutes search and counts.
 
 ## Concurrency
-Other writers may touch the bundle. Do every mutation (write doc, deprecate, delete, append log, regenerate index) as one sequence under an exclusive advisory lock on `docs/.okf.lock`, for example `flock docs/.okf.lock -c '<commands>'` where `flock` exists, or a Python `fcntl.flock` script. Never split the sequence across separate lock holds.
+Other writers (ocode, other sessions) may touch the bundle. They all take an exclusive `flock` on `docs/.okf.lock`. The update script holds that lock while it appends the log and regenerates the index, and it rebuilds the index from the files on disk, so a concurrent writer's doc is never lost from it. Run at most one `okf:context-writer` at a time.
 
 ## Init and audit
-- **Init** (only when asked, and only when no marker exists): refuse if `docs/index.md` exists without the marker. Otherwise create `index.md` containing the marker and an empty log, then annotate existing docs with frontmatter without changing their bodies. If the marker already exists, run an audit instead of failing.
+- **Init** (only when asked, and only when no marker exists): refuse if `docs/index.md` exists without the marker. Otherwise create `index.md` containing the marker and a `log.md` holding only `# Directory Update Log`, annotate existing docs with frontmatter without changing their bodies, then run the script in `index` mode. If the marker already exists, run an audit instead of failing.
 - **Audit:** count conforming, non-conforming and deprecated docs. Stale docs (contradict current code) get fixed, not just reported: delegate the correction to `okf:context-writer`, which corrects or prunes the false parts and deprecates the doc when nothing in it still holds. Merge duplicates into the better doc and deprecate the other. Report orphans (not reachable from the index or never referenced) and broken anchors.
 
 ## Gotchas
