@@ -97,7 +97,7 @@ The hook uses command-string form rather than exec form because ocode routes Win
 
 The hook command is `"${CLAUDE_PLUGIN_ROOT}/scripts/okf.cmd" remind`. Preserve the current `startup` matcher and five-second timeout.
 
-This contract was verified against ocode's `internal/plugins/sessionstart.go`: command hooks without `args` use `cmd /C` on Windows and `bash -c` elsewhere. The lock contract was verified against `internal/filelock/lock_windows.go`: `LockFileEx` uses the exclusive and fail-immediately flags over one byte at offset zero.
+This contract was verified against ocode's `plugins.hookCmd`: command hooks without `args` use `cmd /C` on Windows and `bash -c` elsewhere. The lock contract was verified against `knowledge.WithBundleLock`, `knowledge.lockFileName`, and `filelock.tryLockFile`: the lock is `.okf.lock`, and Windows `LockFileEx` uses the exclusive and fail-immediately flags over one byte at offset zero.
 
 ### Binary layout
 
@@ -196,6 +196,7 @@ okf/
   internal/okf/log.go
   internal/okf/remind.go
   internal/filelock/lock.go
+  internal/filelock/atomic.go
   internal/filelock/lock_unix.go
   internal/filelock/lock_windows.go
   internal/filelock/replace_unix.go
