@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-25
 
-**Status:** Approved in chat; pending written-spec review
+**Status:** Approved in chat; self-reviewed; pending written-spec approval
 **Owners:** claude-si maintainers
 
 ## Goal
@@ -95,6 +95,8 @@ The CLI writes normal success output to stdout and errors to stderr. Every failu
 
 The hook uses command-string form rather than exec form because ocode routes Windows command strings through `cmd.exe`, which can execute `.cmd` files directly.
 
+The hook command is `"${CLAUDE_PLUGIN_ROOT}/scripts/okf.cmd" remind`. Preserve the current `startup` matcher and five-second timeout.
+
 This contract was verified against ocode's `internal/plugins/sessionstart.go`: command hooks without `args` use `cmd /C` on Windows and `bash -c` elsewhere. The lock contract was verified against `internal/filelock/lock_windows.go`: `LockFileEx` uses the exclusive and fail-immediately flags over one byte at offset zero.
 
 ### Binary layout
@@ -138,6 +140,7 @@ Binaries are committed so plugin installation needs no build step or network acc
 - Apply `.okfignore` patterns to basenames and bundle-relative slash paths.
 - Treat a trailing `/` pattern as a directory exclusion.
 - Use whole-string glob matching where `*` and `?` never cross `/`.
+- Match the current Perl glob translation for malformed classes and escapes; an unmatched `[` is literal.
 - Parse only the top-level scalar fields needed for indexing.
 - Support plain, single-quoted, double-quoted, literal, and folded scalars.
 - Treat sequence and mapping values as empty, matching the Perl script.
@@ -172,6 +175,7 @@ Binaries are committed so plugin installation needs no build step or network acc
 - Windows: call `LockFileEx` with `LOCKFILE_EXCLUSIVE_LOCK|LOCKFILE_FAIL_IMMEDIATELY` over one byte at offset zero.
 - Unlock and close on every return path.
 - Write `index.md` and `log.md` through same-directory temporary files.
+- Create temporary files with `0600` semantics, matching Perl and ocode.
 - Sync and close temporary files before replacement.
 - Unix: replace with `os.Rename`.
 - Windows: replace with `MoveFileEx` using `MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH`.
@@ -216,6 +220,7 @@ Commit golden fixtures under `okf/testdata/perl-golden/`. Generate them once on 
 - CI must fail if committed binaries differ from a fresh build.
 - Keep the launcher free of OKF business logic.
 - Create CI from scratch; this repository currently has no workflow directory.
+- Pin one exact Go toolchain version in CI and document it for maintainers.
 
 ## Testing Strategy
 
