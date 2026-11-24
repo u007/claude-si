@@ -280,8 +280,8 @@ func TestWithFileLockSerializes(t *testing.T) {
 	}()
 	<-entered
 	started := time.Now()
+	time.AfterFunc(150*time.Millisecond, func() { close(release) })
 	err := WithFileLock(path, 2*time.Second, func() error { return nil })
-	close(release)
 	if err != nil || time.Since(started) < 50*time.Millisecond {
 		t.Fatalf("second lock did not wait: %v", err)
 	}
@@ -456,7 +456,7 @@ Expected: FAIL because the launcher and host binary do not exist.
 
 - [ ] **Step 4: Implement the polyglot launcher**
 
-Create `okf/scripts/okf.cmd` with first line exactly `: << 'CMDBLOCK'`, no shebang or BOM, and LF endings. Put `@echo off`, binary selection and invocation with `%*`, and `exit /b %ERRORLEVEL%` before the `CMDBLOCK` terminator. After the terminator, implement the POSIX branch. Resolve the plugin root with `%~dp0..\..` on Windows and `CDPATH= cd -- "$(dirname -- "$0")/../.."` on Unix. Select Windows from `%OS%`, otherwise map `uname -s`; map `%PROCESSOR_ARCHITECTURE%` or `uname -m` to `amd64` or `arm64`. Append `.exe` on Windows. Use `exec "$bin" "$@"` on Unix and `"%bin%" %*` on Windows. Fail with a stderr message and non-zero status for unsupported platforms, architectures, or missing binaries.
+Create `okf/scripts/okf.cmd` with first line exactly `: << 'CMDBLOCK'`, no shebang or BOM, and LF endings. Put `@echo off`, binary selection and invocation with `%*`, and `exit /b %ERRORLEVEL%` before the `CMDBLOCK` terminator. After the terminator, implement the POSIX branch. Resolve the plugin root with `%~dp0..` on Windows and `CDPATH= cd -- "$(dirname -- "$0")/.."` on Unix. Select Windows from `%OS%`, otherwise map `uname -s`; map `%PROCESSOR_ARCHITECTURE%` or `uname -m` to `amd64` or `arm64`. Treat `MINGW*` and `MSYS*` as Windows in the POSIX branch. Append `.exe` on Windows. Use `exec "$bin" "$@"` on Unix and `"%bin%" %*` on Windows. Fail with a stderr message and non-zero status for unsupported platforms, architectures, or missing binaries.
 
 Implement `launcherCommand` with `exec.Command("bash", "-c", shellQuote(launcher)+" "+shellQuoteArgs(args))` on Unix. On Windows, pass `cmd /C` one command string containing the quoted launcher and quoted arguments. This models the verified host executors rather than bare `os/exec`.
 
