@@ -118,6 +118,8 @@ Binaries are committed so plugin installation needs no build step or network acc
 
 - Create a root `.gitattributes`.
 - Pin `okf/scripts/okf.cmd` to `text eol=lf`.
+- Pin `okf/scripts/build.sh` to `text eol=lf`.
+- Mark `okf/testdata/perl-golden/**` as `-text` to preserve intentional CRLF fixture bytes.
 - Mark `okf/bin/**` as `binary`.
 - Preserve executable mode for the launcher in the Git index.
 
