@@ -55,7 +55,7 @@ Replace the OKF Perl updater with a standalone Go CLI that works natively on mac
 
 Use one dependency-free Go CLI and one polyglot launcher.
 
-The launcher is a `.cmd` file that is also a valid POSIX shell script. Unix kernels execute its shebang; Windows `cmd.exe` and PowerShell execute its batch branch. It selects a prebuilt binary from the plugin directory and forwards arguments unchanged.
+The launcher is a `.cmd` file that is also a valid POSIX shell script. Its first line is exactly `: << 'CMDBLOCK'`, with no shebang or BOM. Unix shells execute the POSIX branch through their `ENOEXEC` fallback; Windows `cmd.exe` and PowerShell execute the batch branch. It selects a prebuilt binary from the plugin directory and forwards arguments unchanged.
 
 This avoids a Claude Code mod, avoids duplicate reminder logic, and gives ocode the same native Windows path. The unusual launcher syntax is acceptable only with native CI coverage on all three operating systems.
 
@@ -83,8 +83,10 @@ The CLI writes normal success output to stdout and errors to stderr. Every failu
 ### Launcher contract
 
 - File: `okf/scripts/okf.cmd`.
-- Unix branch: `#!/bin/sh`, executable mode `0755`, LF line endings.
-- Windows branch: valid `cmd.exe` batch syntax after the shared header.
+- First line: exactly `: << 'CMDBLOCK'`, with no shebang, BOM, or CR bytes.
+- Unix branch: executable mode `0755`, LF line endings, invoked through `bash -c`.
+- Windows branch: valid `cmd.exe` batch syntax inside the heredoc block.
+- Batch branch: `@echo off`, binary invocation with `%*`, then `exit /b %ERRORLEVEL%` before `CMDBLOCK`.
 - Resolve the plugin root from the launcher location.
 - Map macOS to `darwin`, Linux to `linux`, and Windows to `windows`.
 - Map `x86_64` and `AMD64` to `amd64`.
@@ -300,7 +302,8 @@ Capture Perl stdout, stderr, exit codes, and resulting file bytes in `okf/testda
 
 | Risk | Mitigation |
 | --- | --- |
-| Polyglot launcher parses differently across shells | Native CI through direct execution, Bash, `cmd.exe`, and PowerShell |
+| Polyglot launcher parses differently across shells | Native CI through Bash, `cmd.exe`, and PowerShell invocation |
+| A shebang pollutes Windows stderr | Use the no-shebang heredoc header and assert the exact first line |
 | Windows rewrites launcher line endings | `.gitattributes` pins `okf/scripts/okf.cmd` to LF and marks binaries binary |
 | Windows lock semantics differ from Unix | Mirror ocode's one-byte `LockFileEx` range and test contention on Windows |
 | Windows replacement fails when the target exists | Use `MoveFileEx` with replace and write-through flags |
