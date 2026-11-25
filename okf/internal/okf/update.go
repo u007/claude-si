@@ -10,28 +10,36 @@ import (
 const lockTimeout = 60 * time.Second
 
 func RegenerateIndex(root string) error {
-	return filelock.WithFileLock(filepath.Join(root, ".okf.lock"), lockTimeout, func() error {
-		data, err := RenderIndex(root)
+	bundle, err := LoadBundle(root)
+	if err != nil {
+		return err
+	}
+	return filelock.WithFileLock(filepath.Join(bundle.Root, ".okf.lock"), lockTimeout, func() error {
+		data, err := RenderIndex(bundle.Root)
 		if err != nil {
 			return err
 		}
-		return filelock.WriteFileAtomic(filepath.Join(root, "index.md"), data)
+		return filelock.WriteFileAtomic(filepath.Join(bundle.Root, "index.md"), data)
 	})
 }
 
 func LogAndIndex(root, action, docPath, summary string, now time.Time) error {
-	return filelock.WithFileLock(filepath.Join(root, ".okf.lock"), lockTimeout, func() error {
-		logData, err := RenderLog(root, action, docPath, summary, now)
+	bundle, err := LoadBundle(root)
+	if err != nil {
+		return err
+	}
+	return filelock.WithFileLock(filepath.Join(bundle.Root, ".okf.lock"), lockTimeout, func() error {
+		logData, err := RenderLog(bundle.Root, action, docPath, summary, now)
 		if err != nil {
 			return err
 		}
-		if err := filelock.WriteFileAtomic(filepath.Join(root, "log.md"), logData); err != nil {
-			return err
-		}
-		indexData, err := RenderIndex(root)
+		indexData, err := RenderIndex(bundle.Root)
 		if err != nil {
 			return err
 		}
-		return filelock.WriteFileAtomic(filepath.Join(root, "index.md"), indexData)
+		if err := filelock.WriteFileAtomic(filepath.Join(bundle.Root, "log.md"), logData); err != nil {
+			return err
+		}
+		return filelock.WriteFileAtomic(filepath.Join(bundle.Root, "index.md"), indexData)
 	})
 }

@@ -2,8 +2,10 @@ package filelock
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -48,5 +50,45 @@ func TestWriteFileAtomicReplacesTarget(t *testing.T) {
 	matches, err := filepath.Glob(filepath.Join(dir, ".*.tmp.*"))
 	if err != nil || len(matches) != 0 {
 		t.Fatalf("temporary files remain: %v, %v", matches, err)
+	}
+}
+
+func TestWriteFileAtomicNewFileIsWorldReadable(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "index.md")
+	if err := WriteFileAtomic(target, []byte("new")); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS == "windows" {
+		return
+	}
+	assertMode(t, target, 0644)
+}
+
+func TestWriteFileAtomicKeepsExistingMode(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "log.md")
+	if err := os.WriteFile(target, []byte("old"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	// Set the mode explicitly so the umask cannot change the fixture.
+	if err := os.Chmod(target, 0640); err != nil {
+		t.Fatal(err)
+	}
+	if err := WriteFileAtomic(target, []byte("new")); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS == "windows" {
+		return
+	}
+	assertMode(t, target, 0640)
+}
+
+func assertMode(t *testing.T, path string, want fs.FileMode) {
+	t.Helper()
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := info.Mode().Perm(); got != want {
+		t.Fatalf("mode of %s = %o; want %o", path, got, want)
 	}
 }

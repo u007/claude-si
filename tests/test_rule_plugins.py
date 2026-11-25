@@ -53,6 +53,20 @@ class RulePlugins(unittest.TestCase):
         for name, needle in expect.items():
             self.assertIn(needle, (ROOT / name / RULES_FILE.get(name, "rules.md")).read_text())
 
+    def test_communication_style_defaults_to_plain_language(self):
+        standard = (ROOT / "communication-style" / "standard.md").read_text()
+        for anchor in (
+            "Plain Language First",
+            "one or two plain sentences",
+            "Leave out mechanisms",
+            "Then stop",
+            "act, verify, diagnose, or run safely",
+            "required block",
+            "precise technical discussion",
+            "Add elaboration only when Plain Language First allows it.",
+        ):
+            self.assertIn(anchor, standard)
+
 
 if __name__ == "__main__":
     unittest.main()

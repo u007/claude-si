@@ -120,6 +120,14 @@ func TestParseFrontmatterEdgeCases(t *testing.T) {
 	}
 }
 
+func TestCompileGlobInvalidPattern(t *testing.T) {
+	for _, pattern := range []string{"[]", "[!]", "[^]", "[z-a]"} {
+		if _, err := compileGlob(pattern); err == nil {
+			t.Fatalf("compileGlob(%q) must fail", pattern)
+		}
+	}
+}
+
 func TestCompileGlob(t *testing.T) {
 	cases := []struct {
 		pattern string
@@ -135,7 +143,10 @@ func TestCompileGlob(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.pattern, func(t *testing.T) {
-			re := compileGlob(tc.pattern)
+			re, err := compileGlob(tc.pattern)
+			if err != nil {
+				t.Fatal(err)
+			}
 			for _, value := range tc.match {
 				if !re.MatchString(value) {
 					t.Fatalf("%q must match %q", tc.pattern, value)
@@ -162,7 +173,13 @@ func TestOKFVersion(t *testing.T) {
 		{"quoted", "---\nokf_version: \" 0.3 \"\n---\n", "0.3", true},
 		{"empty marker is present", "---\nokf_version:\n---\n", "", true},
 		{"outside frontmatter is absent", "# okf_version: 0.1\n", "", false},
-		{"unclosed frontmatter is absent", "---\nokf_version: 0.1\n", "", false},
+		{"no closing fence still reads version", "---\nokf_version: 0.1\n", "0.1", true},
+		{"no closing fence without marker is absent", "---\ntitle: x\n", "", false},
+		{"closing fence with trailing space stops scan", "---\ntitle: x\n--- \nokf_version: 0.1\n", "", false},
+		{"closing fence with trailing space keeps earlier version", "---\nokf_version: 0.1\n--- \n", "0.1", true},
+		{"ellipsis stops scan", "---\ntitle: x\n...\nokf_version: 0.1\n", "", false},
+		{"ellipsis keeps earlier version", "---\nokf_version: 0.2\n...\n", "0.2", true},
+		{"indented key counts like Perl", "---\n  okf_version: 0.1\n---\n", "0.1", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

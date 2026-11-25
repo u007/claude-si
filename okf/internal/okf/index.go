@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"maps"
 	"os"
@@ -13,6 +14,9 @@ import (
 	"strings"
 	"unicode/utf8"
 )
+
+// warningOut receives non-fatal index warnings. Tests swap it to capture output.
+var warningOut io.Writer = os.Stderr
 
 type indexEntry struct {
 	path       string
@@ -26,7 +30,7 @@ type ignorePatterns struct {
 	dirs  []*regexp.Regexp
 }
 
-func compileGlob(pattern string) *regexp.Regexp {
+func compileGlob(pattern string) (*regexp.Regexp, error) {
 	var out strings.Builder
 	out.WriteByte('^')
 	for i := 0; i < len(pattern); {
@@ -72,7 +76,7 @@ func compileGlob(pattern string) *regexp.Regexp {
 		}
 	}
 	out.WriteByte('$')
-	return regexp.MustCompile(out.String())
+	return regexp.Compile(out.String())
 }
 
 func RenderIndex(root string) ([]byte, error) {
@@ -85,11 +89,22 @@ func RenderIndex(root string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defaults := []*regexp.Regexp{compileGlob("PLAN-*.md"), compileGlob("*.OCODE.md")}
+	defaults := make([]*regexp.Regexp, 0, 2)
+	for _, pattern := range []string{"PLAN-*.md", "*.OCODE.md"} {
+		re, err := compileGlob(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("okf: default pattern %q: %w", pattern, err)
+		}
+		defaults = append(defaults, re)
+	}
 
 	paths := make([]string, 0)
 	err = fs.WalkDir(os.DirFS(root), ".", func(path string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
+			if entry != nil && entry.IsDir() && errors.Is(walkErr, fs.ErrPermission) {
+				fmt.Fprintf(warningOut, "okf: warning: skipping %s: %v\n", path, walkErr)
+				return fs.SkipDir
+			}
 			return walkErr
 		}
 		if path == "." {
@@ -209,8 +224,16 @@ func readIgnorePatterns(root string) (ignorePatterns, error) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		patterns.files = append(patterns.files, compileGlob(line))
-		patterns.dirs = append(patterns.dirs, compileGlob(strings.TrimSuffix(line, "/")))
+		fileRe, err := compileGlob(line)
+		if err != nil {
+			return ignorePatterns{}, fmt.Errorf("okf: invalid .okfignore pattern %q: %w", line, err)
+		}
+		dirRe, err := compileGlob(strings.TrimSuffix(line, "/"))
+		if err != nil {
+			return ignorePatterns{}, fmt.Errorf("okf: invalid .okfignore pattern %q: %w", line, err)
+		}
+		patterns.files = append(patterns.files, fileRe)
+		patterns.dirs = append(patterns.dirs, dirRe)
 	}
 	return patterns, nil
 }

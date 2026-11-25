@@ -18,7 +18,7 @@
     {
       "name": "okf",
       "source": "./okf",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "description": "OKF knowledge bundle workflow: look up docs before work, update after, prune stale sections, dedupe, keep index and log in sync. Ships read-only context and context-writer agents; SessionStart hook dispatches them when a bundle exists."
     },
     {
@@ -30,8 +30,8 @@
     {
       "name": "communication-style",
       "source": "./communication-style",
-      "version": "0.2.0",
-      "description": "Injects the ASD-STE100 based Agent Communication & Style Standard, with brevity rules, into every session at start."
+      "version": "0.3.0",
+      "description": "Injects the ASD-STE100 based Agent Communication & Style Standard, with brevity and plain-language-first rules, into every session at start."
     },
     {
       "name": "working-principles",

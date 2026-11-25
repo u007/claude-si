@@ -38,7 +38,7 @@ Update the bundle only for durable knowledge produced by this task: a decision a
 2. Verify claims against the code or system before writing them down. Claims the brief marks as verified need no re-check; verify the rest. **Prune while editing:** delete or rewrite every part of an existing doc the change makes false. A live doc keeps no stale section. Deprecate the whole doc only when nothing in it still holds.
 3. Write the doc (format below) at a bundle-relative path, one topic per doc. The path must stay inside `docs/` (no `..`, not absolute) and must not be `index.md` or `log.md`.
 4. Set `timestamp` to now (RFC 3339) on create and on every content change.
-5. Write the doc, then run the update script once (step 4). It takes the lock, appends the log entry and regenerates the index.
+5. Write the doc, then run the update launcher once (step 4). It takes the lock, appends the log entry and regenerates the index.
 
 ### Doc format
 ```yaml
@@ -56,13 +56,13 @@ deprecated_reason: why   # only when deprecated
 `type` is required. A doc without this frontmatter is non-conforming: it stays in the bundle, gets listed under Unclassified, and should be annotated. Keep unknown frontmatter keys when you rewrite a doc.
 
 ## 4. Log and index (keep both in sync after every change)
-Never edit `docs/log.md` or `docs/index.md` by hand. After each doc change, run the bundled script (it sits in this skill's base directory, under `scripts/`):
+Never edit `docs/log.md` or `docs/index.md` by hand. After each doc change, run the bundled launcher (`scripts/okf.cmd` in the plugin root, which is `<skill-base-dir>/../../` from this skill's base directory; it starts the okf binary for your platform):
 ```
-perl <skill-base-dir>/scripts/okf-update.pl docs log <Creation|Update|Deprecation|Deletion> <bundle-relative-path> "<one-sentence summary>"
+"<skill-base-dir>/../../scripts/okf.cmd" docs log <Creation|Update|Deprecation|Deletion> <bundle-relative-path> "<one-sentence summary>"
 ```
-It takes the lock on `docs/.okf.lock`, adds the log entry under today's heading, regenerates `index.md` from every doc's frontmatter, and writes both atomically. Run one call per changed doc. `perl <skill-base-dir>/scripts/okf-update.pl docs index` only regenerates the index. If the script exits non-zero, report its error; do not fall back to hand edits. Keep the summary to one sentence: the log is history, the doc holds the detail.
+It takes the lock on `docs/.okf.lock`, adds the log entry under today's heading, regenerates `index.md` from every doc's frontmatter, and writes both atomically. Run one call per changed doc. `"<skill-base-dir>/../../scripts/okf.cmd" docs index` only regenerates the index. If the command exits non-zero, report its error; do not fall back to hand edits. Keep the summary to one sentence: the log is history, the doc holds the detail.
 
-The formats the script produces, for reference:
+The formats the launcher produces, for reference:
 
 **`docs/log.md`** is append-only history, newest day first:
 ```
@@ -82,17 +82,17 @@ Action is one of `Creation`, `Update`, `Deprecation`, `Deletion`. Add the entry 
 - Write to a temp file and rename it over `index.md`, so a failed run leaves the old index intact.
 
 ## Deprecate and clean up
-- Deprecate, never delete, as the normal path: set `status: deprecated` and `deprecated_reason`, then run the script with `Deprecation`.
-- Cleanup deletes deprecated docs. List them with path and reason first and delete only after the user confirms. Then run the script with `Deletion` for each.
+- Deprecate, never delete, as the normal path: set `status: deprecated` and `deprecated_reason`, then run the launcher with `Deprecation`.
+- Cleanup deletes deprecated docs. List them with path and reason first and delete only after the user confirms. Then run the launcher with `Deletion` for each.
 
 ## Exclusions
 Skipped as docs: `index.md`, `log.md`, dot-files and dot-directories, non-`.md` files, `PLAN-*.md` and `*.OCODE.md`. `docs/.okfignore` adds patterns, one per line (blank lines and `#` comments skipped). A pattern matches the basename and the bundle-relative path, and a trailing `/` matches directories. Put non-bundle markdown that lives under `docs/` (eval output, generated reports, drafts) in `.okfignore`, or it is counted as bundle docs and pollutes search and counts.
 
 ## Concurrency
-Other writers (ocode, other sessions) may touch the bundle. They all take an exclusive `flock` on `docs/.okf.lock`. The update script holds that lock while it appends the log and regenerates the index, and it rebuilds the index from the files on disk, so a concurrent writer's doc is never lost from it. Run at most one `okf:context-writer` at a time.
+Other writers (ocode, other sessions) may touch the bundle. They all take an exclusive lock on `docs/.okf.lock` (flock on Unix, LockFileEx on Windows). The launcher holds that lock while it appends the log and regenerates the index, and it rebuilds the index from the files on disk, so a concurrent writer's doc is never lost from it. Run at most one `okf:context-writer` at a time.
 
 ## Init and audit
-- **Init** (only when asked, and only when no marker exists): refuse if `docs/index.md` exists without the marker. Otherwise create `index.md` containing the marker and a `log.md` holding only `# Directory Update Log`, annotate existing docs with frontmatter without changing their bodies, then run the script in `index` mode. If the marker already exists, run an audit instead of failing.
+- **Init** (only when asked, and only when no marker exists): refuse if `docs/index.md` exists without the marker. Otherwise create `index.md` containing the marker and a `log.md` holding only `# Directory Update Log`, annotate existing docs with frontmatter without changing their bodies, then run the launcher in `index` mode. If the marker already exists, run an audit instead of failing.
 - **Audit:** count conforming, non-conforming and deprecated docs. Stale docs (contradict current code) get fixed, not just reported: delegate the correction to `okf:context-writer`, which corrects or prunes the false parts and deprecates the doc when nothing in it still holds. Merge duplicates into the better doc and deprecate the other. Report orphans (not reachable from the index or never referenced) and broken anchors.
 
 ## Gotchas

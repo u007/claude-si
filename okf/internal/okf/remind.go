@@ -19,7 +19,7 @@ func Reminder(projectDir string) (string, bool, error) {
 		}
 		return "", false, fmt.Errorf("okf: cannot read %s: %w", index, err)
 	}
-	if _, found := okfVersion(raw); !found {
+	if !reminderVersionFound(raw) {
 		return "", false, nil
 	}
 	return ReminderText, true, nil

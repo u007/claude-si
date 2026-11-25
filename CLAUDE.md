@@ -16,6 +16,12 @@ python3 context-status/scripts/test_ensure_statusline.py
 # branch-indicator tests
 python3 branch-indicator/scripts/test_branch_indicator.py
 
+# okf: build the Go binary for every os/arch into okf/bin/ (needs go1.24.0, refuses other versions)
+sh okf/scripts/build.sh
+
+# okf Go tests (scripts/launcher_test.go runs bin/, so build first)
+cd okf && go test ./...
+
 # Single test: ClassName.method_name
 python3 context-status/bin/test_context_statusline.py ModelSegment.test_shows_model_display_name
 
@@ -64,9 +70,17 @@ Delete any `__pycache__` the test run leaves behind. It is gitignored, but do no
 - Output is `systemMessage` (shown to the user) plus `additionalContext` (for Claude). PostToolUse is silent unless the location changed since the last announcement, tracked per session in a temp file.
 - The git-dir/HEAD parsing duplicates `context-status`; plugins install independently so they cannot share code. Keep the two in step.
 
+### okf: knowledge bundle CLI
+
+- Go CLI in `okf/cmd/okf` and `okf/internal/okf`, built by `okf/scripts/build.sh` into `okf/bin/<os>/<arch>/okf[.exe]` (six targets, `CGO_ENABLED=0`). `bin/` must be committed before release, because installs do not build.
+- `okf/scripts/okf.cmd` is a polyglot launcher (`sh` on Unix, `cmd` on Windows) that picks the binary. `hooks/hooks.json` (SessionStart, `startup` only) runs `"${CLAUDE_PLUGIN_ROOT}/scripts/okf.cmd" remind`. The skill and `context-writer` call `docs log` and `docs index` through the launcher at `<skill-base-dir>/../../scripts/okf.cmd`.
+- `remind` reads no stdin. A missing or unmarked `docs/index.md` is silent. An unreadable `index.md` or `docs` exits 1 with a message, where the old shell hook exited 0 silently. CRLF files are accepted, which the old awk rejected. Like the awk, `okf_version:` must start at column 0. Keep `ReminderText` in step with `scripts/okf-reminder.sh`: `remind_test.go` reads that file, so do not delete it.
+- Writes take an exclusive lock on `docs/.okf.lock` (flock on Unix, LockFileEx on Windows), then replace `log.md` and `index.md` atomically.
+- `skills/okf/scripts/okf-update.pl` is no longer called. Only the golden fixtures in `okf/testdata/perl-golden` trace back to it (captured at commit `f74ffe0`; regenerate only with Perl on that commit). No test runs the script.
+
 ### Rule-pack plugins: communication-style, working-principles, code-quality, git-safety, frontend-standards, lean-changes
 
-- Each holds one markdown file (`rules.md`; `standard.md` for communication-style, ASD-STE100 limits plus software overrides, ported from ocode `internal/agent/prompt.go`) and a SessionStart hook (matcher `startup|clear|compact`, so not `resume`) whose command is `cat "${CLAUDE_PLUGIN_ROOT}/<file>"`. Stdout becomes session context. A missing file makes the hook exit non-zero (Claude Code shows a non-blocking error; ocode ignores it). No hook script, so nothing is duplicated across plugins. `code-quality` also ships a read-only script invoked by its `/code-quality:finish-check` skill, not by the hook.
+- Each holds one markdown file (`rules.md`; `standard.md` for communication-style, ASD-STE100 limits plus software overrides and plain-language-first rules, derived from ocode `internal/agent/prompt.go`) and a SessionStart hook (matcher `startup|clear|compact`, so not `resume`) whose command is `cat "${CLAUDE_PLUGIN_ROOT}/<file>"`. Stdout becomes session context. A missing file makes the hook exit non-zero (Claude Code shows a non-blocking error; ocode ignores it). No hook script, so nothing is duplicated across plugins. `code-quality` also ships a read-only script invoked by its `/code-quality:finish-check` skill, not by the hook.
 - No Python hook script on purpose: ocode runs Claude Code SessionStart hooks with empty stdin and drops hook failures silently (ocode repo, `internal/plugins/sessionstart.go`: `cmd.Stdin = nil`, error returns `""`), so a script that reads the hook payload crashes there unnoticed. Keep these hooks stdin-independent.
 - Split from the user's former global `~/.claude/CLAUDE.md`. Users opt out of a theme by not installing its plugin.
 - Brevity and ASD-STE100 style live in `communication-style`; the other packs carry no style rules.

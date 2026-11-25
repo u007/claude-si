@@ -21,6 +21,10 @@ func TestReminder(t *testing.T) {
 		{"marker outside frontmatter", "# okf_version: 0.1\n", false, false, false},
 		{"unclosed frontmatter", "---\nokf_version: 0.1\n", false, false, false},
 		{"no bundle", "", false, false, true},
+		{"indented marker is not column zero", "---\n  okf_version: 0.1\n---\n", false, false, false},
+		{"nested marker is not column zero", "---\nbundle:\n  okf_version: 0.1\n---\n", false, false, false},
+		{"trailing space on closing fence", "---\nokf_version: 0.1\n--- \n", false, false, false},
+		{"ellipsis without closing fence", "---\nokf_version: 0.1\n...\n", false, false, false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -1,8 +1,10 @@
 package okf
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -71,5 +73,61 @@ func writeTestFile(t *testing.T, path string, data []byte) {
 	}
 	if err := os.WriteFile(path, data, 0600); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRenderIndexRejectsInvalidIgnorePattern(t *testing.T) {
+	for _, pattern := range []string{"[]", "[!]", "[^]", "[z-a]"} {
+		t.Run(pattern, func(t *testing.T) {
+			root := t.TempDir()
+			writeTestFile(t, filepath.Join(root, "docs", "index.md"), []byte("---\nokf_version: 0.1\n---\n"))
+			writeTestFile(t, filepath.Join(root, "docs", ".okfignore"), []byte(pattern+"\n"))
+			_, err := RenderIndex(filepath.Join(root, "docs"))
+			want := `okf: invalid .okfignore pattern "` + pattern + `"`
+			if err == nil || !strings.HasPrefix(err.Error(), want) {
+				t.Fatalf("want error starting with %q, got %v", want, err)
+			}
+		})
+	}
+}
+
+func TestRenderIndexSkipsUnreadableDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("chmod does not restrict directory reads on Windows")
+	}
+	if os.Geteuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	docs := filepath.Join(t.TempDir(), "docs")
+	writeTestFile(t, filepath.Join(docs, "index.md"), []byte("---\nokf_version: 0.1\n---\n"))
+	writeTestFile(t, filepath.Join(docs, "alpha.md"), []byte("---\ntitle: Alpha\n---\n"))
+	writeTestFile(t, filepath.Join(docs, "locked", "hidden.md"), []byte("---\ntitle: Hidden\n---\n"))
+	locked := filepath.Join(docs, "locked")
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chmod(locked, 0700); err != nil {
+			t.Error(err)
+		}
+	})
+
+	var warn bytes.Buffer
+	previous := warningOut
+	warningOut = &warn
+	t.Cleanup(func() { warningOut = previous })
+
+	got, err := RenderIndex(docs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(got), "[Alpha](alpha.md)") {
+		t.Fatalf("index lost sibling doc:\n%s", got)
+	}
+	if strings.Contains(string(got), "Hidden") {
+		t.Fatalf("index includes doc from unreadable dir:\n%s", got)
+	}
+	if !strings.HasPrefix(warn.String(), "okf: warning: skipping locked: ") {
+		t.Fatalf("missing skip warning, got %q", warn.String())
 	}
 }

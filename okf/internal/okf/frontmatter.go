@@ -80,12 +80,15 @@ func frontmatterBlock(raw []byte) (string, bool) {
 	return match[1], true
 }
 
+// okfVersion mirrors okf-update.pl's okf_version: after the opening `---` line it
+// scans lines (trimmed) until a `---` or `...` line, and needs no closing fence.
 func okfVersion(raw []byte) (string, bool) {
-	block, ok := frontmatterBlock(raw)
-	if !ok {
+	text := string(raw)
+	if !strings.HasPrefix(text, "---\n") && !strings.HasPrefix(text, "---\r\n") {
 		return "", false
 	}
-	for line := range strings.SplitSeq(block, "\n") {
+	body := text[strings.IndexByte(text, '\n')+1:]
+	for line := range strings.SplitSeq(body, "\n") {
 		line = trimPerlSpace(line)
 		if line == "---" || line == "..." {
 			break
@@ -97,6 +100,21 @@ func okfVersion(raw []byte) (string, bool) {
 		return strings.Trim(trimPerlSpace(value), `"' `), true
 	}
 	return "", false
+}
+
+// reminderVersionFound is the detector okf-reminder.sh's awk uses: the block must
+// have a closing `---` fence, and `okf_version:` must start at column 0 inside it.
+func reminderVersionFound(raw []byte) bool {
+	block, ok := frontmatterBlock(raw)
+	if !ok {
+		return false
+	}
+	for line := range strings.SplitSeq(block, "\n") {
+		if strings.HasPrefix(line, "okf_version:") {
+			return true
+		}
+	}
+	return false
 }
 
 func scalarValue(first string, more []string) string {
