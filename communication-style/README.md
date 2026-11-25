@@ -1,8 +1,12 @@
 # communication-style
 
-SessionStart hook that injects the Agent Communication & Style Standard (ASD-STE100 structural limits plus software-domain overrides), ported from `ocode` (`internal/agent/prompt.go`).
+SessionStart hook that injects the Agent Communication & Style Standard. It combines ASD-STE100 structural limits, brevity, and plain-language-first explanations.
+
+The structural rules began as a port of `ocode` (`internal/agent/prompt.go`). Local rules now add plain-language-first explanations.
 
 The text lives in `standard.md`. Edit it there; the hook is `cat standard.md`, so a missing file makes it exit non-zero. Works unchanged in ocode, which runs the same SessionStart hook with empty stdin.
+
+Explanations stop at outcome, cause, and impact unless detail is asked for or needed to act, verify, diagnose, or run safely.
 
 ```
 /plugin install communication-style@claude-si

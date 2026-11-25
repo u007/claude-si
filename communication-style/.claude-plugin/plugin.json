@@ -1,6 +1,6 @@
 {
   "name": "communication-style",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": { "name": "james" },
-  "description": "Injects the ASD-STE100 based Agent Communication & Style Standard, with brevity rules, into every session at start."
+  "description": "Injects the ASD-STE100 based Agent Communication & Style Standard, with brevity and plain-language-first rules, into every session at start."
 }
