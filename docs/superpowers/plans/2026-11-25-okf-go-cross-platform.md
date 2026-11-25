@@ -420,7 +420,7 @@ Create root `.gitattributes` with:
 ```gitattributes
 okf/scripts/okf.cmd text eol=lf
 okf/scripts/build.sh text eol=lf
-okf/testdata/perl-golden/** -text
+okf/testdata/perl-golden/** -text -whitespace
 okf/bin/** binary
 ```
 

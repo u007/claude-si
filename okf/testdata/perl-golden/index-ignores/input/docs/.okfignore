@@ -1,0 +1,6 @@
+# ignored paths
+skip.md
+drafts/
+*.tmp.md
+literal[.md
+folder/*.md
