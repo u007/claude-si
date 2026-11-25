@@ -147,7 +147,7 @@ Binaries are committed so plugin installation needs no build step or network acc
 - Match the current Perl glob translation for malformed classes and escapes; an unmatched `[` is literal.
 - Parse only the top-level scalar fields needed for indexing.
 - Support plain, single-quoted, double-quoted, literal, and folded scalars.
-- Treat sequence and mapping values as empty, matching the Perl script.
+- Treat flow sequence and mapping values as empty; block collections fold literally, matching the Perl script.
 - Group conforming documents by top-level directory.
 - Place root documents under `Concepts`.
 - Sort sections by name.

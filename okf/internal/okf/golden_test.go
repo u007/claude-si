@@ -53,7 +53,7 @@ func fixtureDir(name string) string {
 
 func materializeFixture(t *testing.T, name string, now time.Time) string {
 	t.Helper()
-	src := filepath.Join(fixtureDir(name), "input", "docs")
+	src := filepath.Join(fixtureDir(name), "input")
 	dst := filepath.Join(t.TempDir(), "bundle")
 	date := now.Format("2006-01-02")
 	err := filepath.WalkDir(src, func(path string, entry fs.DirEntry, walkErr error) error {
