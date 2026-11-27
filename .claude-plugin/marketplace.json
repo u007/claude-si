@@ -66,7 +66,7 @@
     {
       "name": "review-changes",
       "source": "./review-changes",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": "Deep review of the active change set via the code-reviewer subagent, then issue-by-issue resolution with the user. Covers correctness, contracts, security, production gotchas, tests, DRY and lean code."
     }
   ]

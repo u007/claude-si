@@ -4,7 +4,7 @@ Deep review of the active change set via the code-reviewer subagent, then issue-
 
 One command, `commands/review-changes.md`. Run it as `/review-changes [scope or context]`. With no argument it reviews staged plus unstaged changes, or the commits ahead of the default branch when the tree is clean.
 
-The main agent gathers context and dispatches the `code-reviewer` subagent with the Part B briefing (it reviews small low-risk diffs inline, and splits very large ones across parallel reviewers). It then prints the report and walks each Critical and Important finding with you: fix, fix differently, ignore with a reason, or skip.
+The main agent gathers context and dispatches the `code-reviewer` subagent with the Part B briefing (it reviews small low-risk diffs inline, and splits very large ones across parallel reviewers). It then prints the report and walks each Critical and Important finding with you: fix, fix differently, ignore with a reason, or skip. It ends with a plain-language list of the logic the change set adds or changes, with no file or code references.
 
 This plugin replaces the user-level `~/.claude/commands/review-changes.md`. Remove that file after you install the plugin, or the command exists twice.
 

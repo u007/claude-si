@@ -23,7 +23,7 @@ If the arguments (or surrounding conversation) provide context about the goal, p
 
 **Inline fast path:** check the change set first (`git status` + `git diff --stat` per the Phase 1 scope rule). If it is entirely low-risk per the Phase 1 blast-radius definitions (comments, copy, isolated styling, test-only, clearly local refactors — no shared exports, contracts, or high/medium-risk files) AND under ~50 diff lines, skip the subagent: perform the review yourself inline following Part B's rules and report format, then continue at A3. Any doubt about risk classification → dispatch the subagent.
 
-Otherwise, check the size of the change set (`git diff --stat` for the scope determined by the Phase 1 rule). If it exceeds ~25 changed files or ~3000 diff lines, split it by subsystem/directory into 2–4 groups and dispatch one `code-reviewer` subagent per group in parallel (each briefing = full Part B plus a `## Scope` heading listing only that group's files); then merge the reports, renumbering findings sequentially across reports ordered by severity. Otherwise spawn a single `code-reviewer` subagent with the full contents of Part B (plus Change Context if any). Wait for the report(s).
+Otherwise, check the size of the change set (`git diff --stat` for the scope determined by the Phase 1 rule). If it exceeds ~25 changed files or ~3000 diff lines, split it by subsystem/directory into 2–4 groups and dispatch one `code-reviewer` subagent per group in parallel (each briefing = full Part B plus a `## Scope` heading listing only that group's files); then merge the reports, renumbering findings sequentially across reports ordered by severity, and combining their Logic Changes lists into one. Otherwise spawn a single `code-reviewer` subagent with the full contents of Part B (plus Change Context if any). Wait for the report(s).
 
 ## A3. Relay the report
 
@@ -69,6 +69,8 @@ Suggestion-severity findings are not walked. After the Critical/Important walk, 
 If any fixes were applied, run the project's fast check commands before summarizing — typecheck/lint plus the tests covering the changed files (use the project's documented commands; do not run the full suite if a targeted subset exists). If a check fails, report the failure and resolve it with the user before closing.
 
 Then print a brief completion summary: issues fixed / ignored (documented) / skipped, verification results, and whether plan gaps were recorded.
+
+End with the report's **Logic Changes** list, updated for the fixes applied during resolution. Same rules as in the report: plain words, one short bullet per behavior, no file paths, line numbers, symbol names or code.
 
 ---
 
@@ -256,6 +258,7 @@ A suggested fix is the smallest correction that works. Prefer one that deletes c
 1. **Change Goal** (only if Change Context was provided)
 2. **Verdict** — one short paragraph: well-scoped or not, docs consulted (named), why the change is clean
 3. **Summary** — `Overall quality: Excellent|Good`, `No breaking changes detected.`, residual risks if any
+4. **Logic Changes** — see below
 
 Do not pad a clean review with empty sections.
 
@@ -279,5 +282,13 @@ N. [Critical|Important|Suggestion] path/to/file.ts:42 — <one-line description>
 6. **Breaking Change Register** — `No breaking changes detected.` or each breaking risk with affected symbols and verified callers.
 7. **Test Gaps** — cross-reference only: `See Findings N, M.` or `No meaningful test gaps.` (the gaps themselves live in Findings).
 8. **Summary** — overall quality (`Excellent|Good|Needs Work|Major Issues`), issue counts by severity, residual risks.
+9. **Logic Changes** — see below
 
 Positive notes: mention strong decisions only when directly verified, inside the Verdict.
+
+**Logic Changes** is the last section of every report. It lists what the change set makes the software do differently, not what the review found:
+
+- One short bullet per behavior added or changed, in plain words a non-author can follow. Mark each `Added` or `Changed`.
+- No file paths, line numbers, function, variable or type names, and no code. Findings carry those.
+- Leave out renames, formatting, comments, docs, test-only edits and pure moves.
+- Group related edits into one bullet. If nothing changes behavior, write `No logic changes.`
